@@ -2,18 +2,20 @@
 
 use strict;
 use v5.10;
-use autodie;
 
+die "$0 <installDIR>" unless $#ARGV == 0;
+
+my $installDIR = $ARGV[0];
 my %kohash;
 
-open my $allkos, "<", "misc/ko_nodedetails";
+open my $allkos, "<", "$installDIR/misc/ko_nodedetails" || die "$! no such file: $installDIR/misc/ko_nodedetails";
 while(my $entry = <$allkos>)
 {
     my $ko = (split /\t/, $entry)[0];
     $kohash{$ko} = $entry;
 }
 
-open my $metabkos, "<", "out/nodes/newkonodes";
+open my $metabkos, "<", "$installDIR/out/nodes/newkonodes" || die "$! no such file: $installDIR/out/nodes/newkonodes";
 while(my $entry = <$metabkos>)
 {
     unless($. == 1)
@@ -24,9 +26,8 @@ while(my $entry = <$metabkos>)
 }
 close $metabkos;
 
-open my $final, ">>", "out/nodes/newkonodes";
+open my $final, ">>", "$installDIR/out/nodes/newkonodes" || die "$! no such file: $installDIR/out/nodes/newkonodes";
 print $final $kohash{$_} foreach (keys %kohash);
-
 
 #allKOs  = read.table("misc/ko_nodedetails",sep="\t",comment.char="", h=F, fill=T)
 #metabKO = read.table("out/nodes/newkonodes")
