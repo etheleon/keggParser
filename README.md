@@ -36,11 +36,3 @@ $ kegg.0300.import.r </path/to/keggFTP/root/folder> <misc> <# of threads>
 | magrittr | 1.5      |
 | XML      | 3.98-1.1 |
 | parallel |          |
-
-### Perl
-
-At least perl 5.10
-
-| Package | version |
-| ----    | ----    |
-| autodie |         |
