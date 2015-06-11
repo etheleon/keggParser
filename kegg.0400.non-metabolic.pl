@@ -11,8 +11,9 @@ my %kohash;
 open my $allkos, "<", "$installDIR/misc/ko_nodedetails" || die "$! no such file: $installDIR/misc/ko_nodedetails";
 while(my $entry = <$allkos>)
 {
+    chomp $entry
     my $ko = (split /\t/, $entry)[0];
-    $kohash{$ko} = $entry;
+    $kohash{$ko} = $entry."\tko\n";
 }
 
 open my $metabkos, "<", "$installDIR/out/nodes/newkonodes" || die "$! no such file: $installDIR/out/nodes/newkonodes";
