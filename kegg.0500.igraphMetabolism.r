@@ -13,8 +13,15 @@ relationships <- list.files(args[1])                                  %>%
     do.call(rbind,.)                                     %>%
     unique
 
+relationships = lapply(1:nrow(relationships), function(x, df){
+       if(df[x,"relationship"] == "produces") {
+           df[x,]  %>% select(ko.string.koid, cpd.string.cpdid) %>% setNames(c("start", "end"))
+       }else{
+           df[x,]  %>% select(cpd.string.cpdid, ko.string.koid) %>% setNames(c("start", "end"))
+       }
+}, df = relationships) %>% do.call(rbind,.)
 
 ## Creates IGRAPH OBJ
-wholeMetabolism = graph.data.frame(relationships[,1:2], directed=T)
+wholeMetabolism = graph.data.frame(relationships, directed=T)
 save(wholeMetabolism, file=sprintf("%s/wholeMetabolism.rda", args[1]))
 
