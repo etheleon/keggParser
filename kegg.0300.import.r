@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-library(dplyr)
+library(dplyr,warn=FALSE)
 library(magrittr)
 library(XML)
 library(parallel)

@@ -11,7 +11,7 @@ my %kohash;
 open my $allkos, "<", "$installDIR/misc/ko_nodedetails" || die "$! no such file: $installDIR/misc/ko_nodedetails";
 while(my $entry = <$allkos>)
 {
-    chomp $entry
+    chomp $entry;
     my $ko = (split /\t/, $entry)[0];
     $kohash{$ko} = $entry."\tko\n";
 }

@@ -4,7 +4,7 @@ library(magrittr)
 library(igraph)
 
 args = commandArgs(T)
-args = "~/newMeta4j2/misc/"
+#args = "~/newMeta4j2/misc/"
 
 relationships <- list.files(args[1])                                  %>%
     grep("rels$", ., value=T)                            %>%
