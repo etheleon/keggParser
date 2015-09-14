@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
-library(dplyr, warn.conflicts=FALSE)
-library(magrittr)
-library(igraph)
+suppressMessages(library(dplyr, warn.conflicts=FALSE))
+suppressMessages(library(magrittr))
+suppressMessages(library(igraph))
 
 args = commandArgs(T)
 #args = "~/newMeta4j2/misc/"
