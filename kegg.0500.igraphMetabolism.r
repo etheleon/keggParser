@@ -24,4 +24,3 @@ relationships = lapply(1:nrow(relationships), function(x, df){
 ## Creates IGRAPH OBJ
 wholeMetabolism = graph.data.frame(relationships, directed=T)
 save(wholeMetabolism, file=sprintf("%s/wholeMetabolism.rda", args[1]))
-
