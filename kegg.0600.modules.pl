@@ -8,9 +8,13 @@ die "USAGE: $0 KEGGftp/module/module" unless $#ARGV == 0;
 
 $/ = '///';
 
-say join "\t", qw/modID name type ko/;
 
 open(INPUT, $ARGV[0]) || die $!;
+
+open(NODE, ">", $ARGV[1]) || die $!;
+    say join "\t", qw/module:string:modid name type ko l:label/;
+open(REL, ">", $ARGV[2]) || die $!;
+    say join "\t", qw/module:ko:string:koid type ko relationship/;
 
 while(<INPUT>){
     chomp;
@@ -19,12 +23,13 @@ while(<INPUT>){
         my ($name)           =  $_ =~ m/^NAME\s+(\S.*)$/xm;
         my ($kos)            =  $_ =~ m/^DEFINITION\s+(\S.*)$/xm;
         my @allKOS           =  ($kos =~ m/(K\d{5})/xg);
-        my %hash;
-        $hash{$_}++ for @allKOS;
+        my %kohash;
+        $kohash{$_}++ for map { "ko:$_" } @allKOS;
         $name =~ s/\t//g;
 
-        unless(scalar @allKOS == 0){
-            say join "\t", $module,$name,$type,$_ for keys %hash;
+        unless(scalar @allKOS == 0){    #some modules do not have KOs
+            say NODE join "\t", $module,$name,$type,"module";
+            say REL join  "\t", $module,$_,"mod2ko" for keys %kohash
         }
     }
 }
