@@ -4,7 +4,7 @@ use strict;
 use v5.10;
 
 
-die "USAGE: $0 KEGGftp/module/module" unless $#ARGV == 0;
+die "USAGE: $0 KEGGftp/module/module outputNode outputEdges" unless $#ARGV == 2;
 
 $/ = '///';
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
-library(dplyr,warn=FALSE)
-library(magrittr)
-library(XML)
-library(parallel)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(XML))
+suppressPackageStartupMessages(library(parallel))
 args=commandArgs(T)
 
 #' #Metabolism
