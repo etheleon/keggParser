@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
-suppressMessages(library(dplyr, warn.conflicts=FALSE))
-suppressMessages(library(magrittr))
-suppressMessages(library(igraph))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(igraph))
+>>>>>>> Stashed changes
 
 args = commandArgs(T)
 #args = "~/newMeta4j2/misc/"

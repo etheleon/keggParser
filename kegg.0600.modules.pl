@@ -12,9 +12,9 @@ $/ = '///';
 open(INPUT, $ARGV[0]) || die $!;
 
 open(NODE, ">", $ARGV[1]) || die $!;
-    say join "\t", qw/module:string:modid name type ko l:label/;
+    say NODE join "\t", qw/module:string:modid name type ko l:label/;
 open(REL, ">", $ARGV[2]) || die $!;
-    say join "\t", qw/module:ko:string:koid type ko relationship/;
+    say REL join "\t", qw/module:string:modid ko:string:koid relationship/;
 
 while(<INPUT>){
     chomp;
