@@ -2,23 +2,20 @@
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(igraph))
->>>>>>> Stashed changes
 
 args = commandArgs(T)
 #args = "~/newMeta4j2/misc/"
 
-relationships <- list.files(args[1])                                  %>%
-    grep("rels$", ., value=T)                            %>%
-    paste(args[1], ., sep="/")                           %>%
-    lapply(function(fileName) read.table(fileName, h=T)) %>%
+relationships <- list.files("~/justMetab/misc", pattern="rels$", full=T)    %>%
+    lapply(read.table, h=T) %>%
     do.call(rbind,.)                                     %>%
     unique
 
 relationships = lapply(1:nrow(relationships), function(x, df){
        if(df[x,"relationship"] == "produces") {
-           df[x,]  %>% select(ko.string.koid, cpd.string.cpdid) %>% setNames(c("start", "end"))
+           df[x,]  %>% select(ko.ID, cpd.ID) %>% setNames(c("start", "end"))
        }else{
-           df[x,]  %>% select(cpd.string.cpdid, ko.string.koid) %>% setNames(c("start", "end"))
+           df[x,]  %>% select(cpd.ID, ko.ID) %>% setNames(c("start", "end"))
        }
 }, df = relationships) %>% do.call(rbind,.)
 

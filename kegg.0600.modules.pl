@@ -12,9 +12,9 @@ $/ = '///';
 open(INPUT, $ARGV[0]) || die $!;
 
 open(NODE, ">", $ARGV[1]) || die $!;
-    say NODE join "\t", qw/module:string:modid name type ko l:label/;
+    say NODE join "\t", qw/module:ID name type ko l:label/;
 open(REL, ">", $ARGV[2]) || die $!;
-    say REL join "\t", qw/module:string:modid ko:string:koid relationship/;
+    say REL join "\t", qw/module:START_ID ko:END_ID relationship:TYPE/;
 
 while(<INPUT>){
     chomp;
@@ -24,8 +24,10 @@ while(<INPUT>){
         my ($kos)            =  $_ =~ m/^DEFINITION\s+(\S.*)$/xm;
         my @allKOS           =  ($kos =~ m/(K\d{5})/xg);
         my %kohash;
-        $kohash{$_}++ for map { "ko:$_" } @allKOS;
+        $kohash{$_}++ for map { "ko\\:$_" } @allKOS;
         $name =~ s/\t//g;
+
+        ($type, $name) = map { s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g } ($type, $name);
 
         unless(scalar @allKOS == 0){    #some modules do not have KOs
             say NODE join "\t", $module,$name,$type,"module";

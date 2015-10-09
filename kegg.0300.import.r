@@ -7,16 +7,11 @@ args=commandArgs(T)
 
 #' #Metabolism
 
-ftpAddress = 'ftp://ftp.bioinformatics.jp/kegg/'
-#wget --user=username --password=password -P ~/KEGG/KEGG_JAN_2014 -m ftp://ftp.bioinformatics.jp/kegg/
-
 #args=c(
 #"~/KEGG/KEGG_SEPT_2014", #KEGG root FTP directory
 #"~/db/neo4j/misc",       #cpd and node data directory
 #1
 #)
-
-#TODO: Adding optParse into the script
 
 kegg.directory=args[1]
 pathwayListing=sprintf("%s/xml/kgml/metabolic/ko/", kegg.directory) %>% list.files(full.names=T)
@@ -92,7 +87,7 @@ rxns = xml_data[which(names(xml_data) %in% "reaction")]
                   write.table(sprintf("%s/%s_cpd2ko.rels",args[2], pathway.info$name),
                               quote     = F,
                               row.names = F,
-                              col.names = c("cpd:string:cpdid","ko:string:koid","rxnID","relationship"),
+                              col.names = c("cpd:ID","ko:ID","rxnID","relationship"),
                               sep       = "\t"
                               )
         #KO2Pdt
@@ -104,7 +99,7 @@ rxns = xml_data[which(names(xml_data) %in% "reaction")]
                   write.table(sprintf("%s/%s_ko2cpd.rels",args[2], pathway.info$name),
                               quote     = F,
                               row.names = F,
-                              col.names = c("ko:string:koid","cpd:string:cpdid","rxnID","relationship"),
+                              col.names = c("ko:ID","cpd:ID","rxnID","relationship"),
                               sep       = "\t"
                               )
 
@@ -122,7 +117,7 @@ rxns = xml_data[which(names(xml_data) %in% "reaction")]
                   write.table(sprintf("%s/%s_konodes",args[2],pathway.info$name),
                               quote=F,
                               row.names=F,
-                              col.names=c("ko:string:koid", "name","definition","l:label","pathway","pathway.name"),
+                              col.names=c("ko:ID", "name","definition","l:label","pathway","pathway.name"),
                               sep="\t"
                               )
 
@@ -141,7 +136,7 @@ rxns = xml_data[which(names(xml_data) %in% "reaction")]
                   setNames(c("cpd","name"))                                             %>%
                   filter(cpd %in% unique(c(sub2ko$cpd,ko2pdt$cpd)))                     %>%
                   mutate(label='cpd')                                                   %>%
-                  setNames(c("cpd:string:cpdid","name","l:label"))                      %>%
+                  setNames(c("cpd:ID","name","l:label"))                      %>%
                   write.table(file=sprintf("%s/%s_cpdnodes",args[2],pathway.info$name),
                               sep="\t",
                               quote=F,
@@ -158,12 +153,4 @@ rxns = xml_data[which(names(xml_data) %in% "reaction")]
 }else{
 sprintf("%s does not contain reactions", listing) %>% warning()
         }
-}, mc.cores=args[3])
-
-#Batch import step
-
-#-- Init: setting up .properties file #need to include
-#-- Execution
-#mvn clean compile exec:java -Dexec.mainClass="org.neo4j.batchimport.Importer" -Dexec.args="/export2/home/uesu/github/iomics4j/KEGG/batch1.properties /export2/home/uesu/github/iomics4j/KEGG/newgraph.db /export2/home/uesu/github/iomics4j/KEGG/nodes/newcpdnodes,/export2/home/uesu/github/iomics4j/KEGGfnodes/newkonodes /export2/home/uesu/github/iomics4j/KEGG/rels/newcpdrels,/export2/home/uesu/github/iomics4j/KEGG/rels/newkorels"
-#Batch job
-#perl -l -ne 'print qq(import.r ~/kegg_dump/xml/kgml/metabolic/ko $_ ~/github/iomics4j/KEGG)' <(ls ~/kegg_dump/xml/kgml/metabolic/ko) > batch
+}, mc.cores=args[3]) %>% invisible
