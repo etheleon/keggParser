@@ -19,7 +19,7 @@ pathwayListing=sprintf("%s/xml/kgml/metabolic/ko/", kegg.directory) %>% list.fil
 
 pathwayListing %>%
 mclapply(function(listing){
-        cat(listing); cat("\n")
+        cat("## Processing pathway XML: ");cat(listing); cat("\n")
         xml_data=xmlParse(listing) %>% xmlToList
         hasRxn = sum(names(xml_data) == 'reaction') > 0
         if(hasRxn){
