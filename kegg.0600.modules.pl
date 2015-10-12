@@ -12,7 +12,7 @@ $/ = '///';
 open(INPUT, $ARGV[0]) || die $!;
 
 open(NODE, ">", $ARGV[1]) || die $!;
-    say NODE join "\t", qw/module:ID name type ko l:label/;
+    say NODE join "\t", qw/module:ID name type l:label/;
 open(REL, ">", $ARGV[2]) || die $!;
     say REL join "\t", qw/module:START_ID ko:END_ID relationship:TYPE/;
 
