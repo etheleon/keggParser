@@ -26,8 +26,8 @@ while(<INPUT>){
         my %kohash;
         $kohash{$_}++ for map { "ko\\:$_" } @allKOS;
         $name =~ s/\t//g;
-
-        ($type, $name) = map { s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g } ($type, $name);
+        $type =~ s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g;
+        $name =~ s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g;
 
         unless(scalar @allKOS == 0){    #some modules do not have KOs
             say NODE join "\t", $module,$name,$type,"module";
