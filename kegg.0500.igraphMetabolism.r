@@ -6,7 +6,7 @@ suppressPackageStartupMessages(library(igraph))
 args = commandArgs(T)
 #args = "~/newMeta4j2/misc/"
 
-relationships <- list.files("~/justMetab/misc", pattern="rels$", full=T)    %>%
+relationships <- list.files(args[1], pattern="rels$", full=T)    %>%
     lapply(read.table, h=T) %>%
     do.call(rbind,.)                                     %>%
     unique
