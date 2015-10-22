@@ -24,10 +24,10 @@ while(<INPUT>){
         my ($kos)            =  $_ =~ m/^DEFINITION\s+(\S.*)$/xm;
         my @allKOS           =  ($kos =~ m/(K\d{5})/xg);
         my %kohash;
-        $kohash{$_}++ for map { "ko\\:$_" } @allKOS;
+        $kohash{$_}++ for map { "ko:$_" } @allKOS;
         $name =~ s/\t//g;
-        $type =~ s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g;
-        $name =~ s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g;
+        #$type =~ s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g;
+        #$name =~ s/([\+\-\&\|\|\!\(\)\{\}\[\]\^\"\~\*\?\:\\])/\\$1/g;
 
         unless(scalar @allKOS == 0){    #some modules do not have KOs
             say NODE join "\t", $module,$name,$type,"module";
