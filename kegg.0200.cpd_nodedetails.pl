@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 use strict;
-die "USAGE: $0 KEGGftp/ligand/compound/compound KEGGftp/ligand/glycan/glycan " unless $#ARGV == 1;
+die "USAGE: $0 KEGGftp/ligand/compound/compound" unless $#ARGV == 0;
 
 $/ = '///';
 
