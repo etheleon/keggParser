@@ -7,6 +7,8 @@ args=commandArgs(T)
 
 #' #Metabolism
 
+ftpAddress = 'ftp://ftp.bioinformatics.jp/kegg/'
+
 #args=c(
 #"~/KEGG/KEGG_SEPT_2014", #KEGG root FTP directory
 #"~/db/neo4j/misc",       #cpd and node data directory
@@ -57,7 +59,7 @@ mclapply(function(listing){
             ko2rxn = ko2rxn[complete.cases(ko2rxn),]
 
 #' ##EDGES
-rxns = xml_data[which(names(xml_data) %in% "reaction")]
+rxns =  xml_data[which(names(xml_data) %in% "reaction")]
             edges = rxns %>%
             lapply(function(x){
                 rxnID          = x$.attrs["name"] %>% strsplit(" ") %>% unlist # name
@@ -79,6 +81,7 @@ rxns = xml_data[which(names(xml_data) %in% "reaction")]
             sub2ko = edges %>% lapply(function(reaction) reaction$substrates) %>% do.call(rbind,.)
             ko2pdt = edges %>% lapply(function(reaction) reaction$products) %>% do.call(rbind,.)
             if(length(sub2ko)+length(ko2pdt) > 0){  #some rxns do not have substrates and pdts eg. ko00270 (depreciated)
+
         #Substrate2KO
                 rbind(
                         sub2ko %>% select(-rxnDIR),
@@ -94,7 +97,7 @@ rxns = xml_data[which(names(xml_data) %in% "reaction")]
                 rbind(
                         ko2pdt %>% select(-rxnDIR),
                         sub2ko %>% filter(rxnDIR == 'reversible') %>% select(-rxnDIR)) %>% 
-                  mutate(relationship='produces') %>% 
+                  mutate(relationship='produces') %>%
                   select(ko, cpd, rxnID, relationship) %>%
                   write.table(sprintf("%s/%s_ko2cpd.rels",args[2], pathway.info$name),
                               quote     = F,
