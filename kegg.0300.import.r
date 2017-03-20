@@ -1,159 +1,149 @@
 #!/usr/bin/env Rscript
+
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(XML))
 suppressPackageStartupMessages(library(parallel))
-args=commandArgs(T)
-
-#' #Metabolism
-
-ftpAddress = 'ftp://ftp.bioinformatics.jp/kegg/'
 
 #args=c(
 #"~/KEGG/KEGG_SEPT_2014", #KEGG root FTP directory
 #"~/db/neo4j/misc",       #cpd and node data directory
 #1
 #)
+#args = c("~/simulationDB", "~/simulationDB/misc")
+args=commandArgs(T)
 
-kegg.directory=args[1]
+kegg.directory = args[1]
+root           = args[2]
+mccores        = args[3]
+
 pathwayListing=sprintf("%s/xml/kgml/metabolic/ko/", kegg.directory) %>% list.files(full.names=T)
 
+#' linker_ko2rxn links reactions with their respective KOs
+#' only processes entries in the XML with graphics as one of the names
+#' @param x each entry in the KEGG xml for that pathway
 
-pathwayListing %>%
-mclapply(function(listing){
-        cat("## Processing pathway XML: ");cat(listing); cat("\n")
-        xml_data=xmlParse(listing) %>% xmlToList
-        hasRxn = sum(names(xml_data) == 'reaction') > 0
-        if(hasRxn){
-            pathway.info =  data.frame(t(xml_data[length(xml_data)]$.attrs)) %>%
-                            setNames(names(xml_data[length(xml_data)]$.attrs))
-            #Removes the last row (w/c is the pathway information)
-            xml_data     = xml_data[-length(xml_data)]
+linker_ko2rxn = function(x){
+    isGraphics = "graphics" %in% names(x)
+    if(isGraphics){
+        isOrtholog = x$.attrs[which(names(x$.attrs)=='type')]=='ortholog'
+        if(isOrtholog){
+            reactions  =  x$.attrs[names(x$.attrs) == 'reaction'] %>% strsplit(" ") %>% unlist
+            name       =  x$.attrs[names(x$.attrs) == 'name']     %>% strsplit(" ") %>% unlist
+            do.call(rbind,lapply(reactions, function(rxn) { 
+            do.call(rbind,lapply(name, function(naa){
+                data.frame(reaction=rxn,name=naa)
+            })) }))
+        }else{"not ortholog"}
+    }else{warning("not graphic")}
+}
 
-#' | Types in xml files: | Description |
-#' | ortholog            |             |
-#' | compound            |             |
-#' | map                 |             |
-#' | ECrel               |             |
-#' | maplink             |             |
-#' | reversible          |             |
-#' | irreversible"       |             |
+#' makeEdges the
+#' returns all edges
+#' @param x reactions
+#' @param ko2rxn the output from linker_ko2rxn 
+#' @param listing pathway name
+makeEdges = function(x, ko2rxn, listing){
+    rxnID          = x$.attrs["name"] %>% strsplit(" ") %>% unlist # name
+    rxnDIR = x$.attrs["type"]                                      # reaction type
+    kos.in.pathway = ko2rxn %>% filter(reaction %in% rxnID) %$% as.character(name)
+    isAReaction = sum(c("substrate", "product") %in% names(x)) == 2
+    if(isAReaction){
+        list(substrates = x[["substrate"]][["name"]] %>% strsplit(" ") %>% unlist,
+             products   = x[["product"]][["name"]] %>% strsplit(" ") %>% unlist) %>%
+        lapply(function(cpdS){
+                   lapply(cpdS, function(cpd){
+                              lapply(kos.in.pathway, function (ko) data.frame(cpd, ko, rxnID, rxnDIR,stringsAsFactors=F)) %>%
+                                  do.call(rbind,.)
+            }) %>% do.call(rbind,.)
+             })
+    }else{warning(sprintf("%s has no valid reactions with substrates and products", listing)); NULL}
+}
 
-#' Orthologs (KOs) in same reaction
+#' writeEdges
+#' @param sub2ko in the reaction of substrate to ko
+#' @param ko2pdt opposite direction
+#' @param root the root directory
+#' @param pathway.info dataframe containing the neccessary information
+#' output
 
-            ko2rxn=do.call(rbind,sapply(xml_data, function(x){
-                #has reaction information
-                isGraphics = "graphics" %in% names(x)
-                if(isGraphics){
-                    isOrtholog = x$.attrs[which(names(x$.attrs)=='type')]=='ortholog'
-                    if(isOrtholog){
-                        reactions  =  x$.attrs[names(x$.attrs) == 'reaction'] %>% strsplit(" ") %>% unlist
-                        name       =  x$.attrs[names(x$.attrs) == 'name']     %>% strsplit(" ") %>% unlist
-                        do.call(rbind,lapply(reactions, function(rxn) { 
-                        do.call(rbind,lapply(name, function(naa){
-                            data.frame(reaction=rxn,name=naa)
-                        })) }))
-                    }else{"not ortholog"}
-                }else{warning("not graphic")}
-            }))
-            ko2rxn = ko2rxn[complete.cases(ko2rxn),]
+writeEdges <- function(sub2ko, ko2pdt, root, pathway.info){
+    rbind(
+        sub2ko %>% select(-rxnDIR),
+        ko2pdt %>% filter(rxnDIR == 'reversible') %>% select(-rxnDIR)
+    ) %>% mutate(relationship='substrateof') %>%
+    write.table(sprintf("%s/%s_cpd2ko.rels",root, pathway.info$name),
+        quote = F, row.names = F, sep = "\t",
+        col.names = c("cpd:ID","ko:ID","rxnID","relationship"))
 
-#' ##EDGES
-rxns =  xml_data[which(names(xml_data) %in% "reaction")]
-            edges = rxns %>%
-            lapply(function(x){
-                rxnID          = x$.attrs["name"] %>% strsplit(" ") %>% unlist # name
-                rxnDIR = x$.attrs["type"]                                      # reaction type
-                kos.in.pathway = ko2rxn %>% filter(reaction %in% rxnID) %$% as.character(name)
-                isAReaction = sum(c("substrate", "product") %in% names(x)) == 2
-                if(isAReaction){
-                list(substrates = x[["substrate"]][["name"]] %>% strsplit(" ") %>% unlist,
-                     products   = x[["product"]][["name"]] %>% strsplit(" ") %>% unlist
-                     ) %>%
-                lapply(function(cpdS){
-                    lapply(cpdS, function(cpd){
-                        lapply(kos.in.pathway, function (ko) data.frame(cpd, ko, rxnID, rxnDIR,stringsAsFactors=F)) %>%
-                        do.call(rbind,.)
-                    }) %>% do.call(rbind,.)
-                })
-                }else{warning(sprintf("%s has no valid reactions with substrates and products", listing)); NULL}
-            })
-            sub2ko = edges %>% lapply(function(reaction) reaction$substrates) %>% do.call(rbind,.)
-            ko2pdt = edges %>% lapply(function(reaction) reaction$products) %>% do.call(rbind,.)
-            if(length(sub2ko)+length(ko2pdt) > 0){  #some rxns do not have substrates and pdts eg. ko00270 (depreciated)
+    rbind(
+            ko2pdt %>% select(-rxnDIR),
+            sub2ko %>% filter(rxnDIR == 'reversible') %>% select(-rxnDIR)
+    ) %>% mutate(relationship='produces') %>% select(ko, cpd, rxnID, relationship) %>%
+    write.table(sprintf("%s/%s_ko2cpd.rels",root, pathway.info$name),
+        quote = F, row.names = F,sep = "\t",
+        col.names = c("ko:ID","cpd:ID","rxnID","relationship"))
+}
 
-        #Substrate2KO
-                rbind(
-                        sub2ko %>% select(-rxnDIR),
-                        ko2pdt %>% filter(rxnDIR == 'reversible') %>% select(-rxnDIR)) %>% 
-                  mutate(relationship='substrateof') %>%
-                  write.table(sprintf("%s/%s_cpd2ko.rels",args[2], pathway.info$name),
-                              quote     = F,
-                              row.names = F,
-                              col.names = c("cpd:ID","ko:ID","rxnID","relationship"),
-                              sep       = "\t"
-                              )
-        #KO2Pdt
-                rbind(
-                        ko2pdt %>% select(-rxnDIR),
-                        sub2ko %>% filter(rxnDIR == 'reversible') %>% select(-rxnDIR)) %>% 
-                  mutate(relationship='produces') %>%
-                  select(ko, cpd, rxnID, relationship) %>%
-                  write.table(sprintf("%s/%s_ko2cpd.rels",args[2], pathway.info$name),
-                              quote     = F,
-                              row.names = F,
-                              col.names = c("ko:ID","cpd:ID","rxnID","relationship"),
-                              sep       = "\t"
-                              )
+#' writeNodes
+#' @param sub2ko in the reaction of substrate to ko
+#' @param ko2pdt opposite direction
+#' @param root the root directory
+#' @param pathway.info dataframe containing the neccessary information
+#' output
+writeNodes <- function(sub2ko, ko2pdt, root, pathway.info){
+    nodesdf = sprintf("%s/ko_nodedetails",root)        %>%
+        read.table(sep="\t",h=F,quote="")              %>%
+        setNames(c("ko","name","definition"))          %>%
+        filter(ko %in% unique(c(sub2ko$ko,ko2pdt$ko))) %>%
+        mutate(label='ko')                             %>%
+        cbind(select(pathway.info, name,title))
+    sprintf("%s/%s_konodes",root,pathway.info$name) %>%
+    write.table(nodesdf, ., quote=F, row.names=F, sep="\t",
+        col.names = c("ko:ID", "name","definition","l:label","pathway","pathway.name")
+    )
 
-#' ##NODES
-#' Yet to do: Each pathway will have its own nodes file
-#' ko_nodedetails is generated using a perl script
+    sprintf("%s/cpd_nodedetails",root)                                %>%
+    read.table(skip=1, sep="\t",h=F,quote="")                         %>%
+    filter(V1 %in% unique(c(sub2ko$cpd,ko2pdt$cpd)))                 %>%
+    mutate(label='cpd')                                               %>%
+    setNames(c("cpd:ID","name", "exactMass", "molWeight", "l:label")) %>%
+    write.table(file=sprintf("%s/%s_cpdnodes",root,pathway.info$name), sep="\t", quote=F, row.names=F)
+}
 
-#' ###KO
-                  sprintf("%s/ko_nodedetails",args[2])                                                            %>%
-                  read.table(sep="\t",h=F,quote="")                                                               %>%
-                  setNames(c("ko","name","definition"))                                                           %>%
-                  filter(ko %in% unique(c(sub2ko$ko,ko2pdt$ko)))                                                  %>%
-                  mutate(label='ko')                                                                              %>%
-                  cbind(select(pathway.info, name,title))                                                         %>%
-                  write.table(sprintf("%s/%s_konodes",args[2],pathway.info$name),
-                              quote=F,
-                              row.names=F,
-                              col.names=c("ko:ID", "name","definition","l:label","pathway","pathway.name"),
-                              sep="\t"
-                              )
 
-#TODO: Maybe the raw & c1.mean values 
-#    ko:string:koid             name                                                                                definition l:label      pathway                 pathway.name
-#    1        ko:K00001    E1.1.1.1, adh                                                        alcohol dehydrogenase [EC:1.1.1.1]      ko path:ko00010 Glycolysis / Gluconeogenesis
-#    2        ko:K00002    E1.1.1.2, adh                                                alcohol dehydrogenase (NADP+) [EC:1.1.1.2]      ko path:ko00010 Glycolysis / Gluconeogenesis
-#    16       ko:K00016         LDH, ldh                                                     L-lactate dehydrogenase [EC:1.1.1.27]      ko path:ko00010 Glycolysis / Gluconeogenesis
-#    109      ko:K00114         E1.1.2.8                                         alcohol dehydrogenase (cytochrome c) [EC:1.1.2.8]      ko path:ko00010 Glycolysis / Gluconeogenesis
-#    116      ko:K00121 frmA, ADH5, adhC S-(hydroxymethyl)glutathione dehydrogenase / alcohol dehydrogenase [EC:1.1.1.284 1.1.1.1]      ko path:ko00010 Glycolysis / Gluconeogenesis
-#    123      ko:K00128         E1.2.1.3                                                aldehyde dehydrogenase (NAD+) [EC:1.2.1.3]      ko path:ko00010 Glycolysis / Gluconeogenesis
+#' writeNodes
+#' @param sub2ko in the reaction of substrate to ko
+#' @param ko2pdt opposite direction
+#' @param root the root directory
+#' @param pathway.info dataframe containing the neccessary information
+#' output
+writeOutput = function(sub2ko, ko2pdt, root, pathwayInfo){
+    rxnsExist = length(sub2ko)+length(ko2pdt) > 0
+    if(rxnsExist){  #some rxns do not have substrates and pdts eg. ko00270 (depreciated)
+        writeEdges(sub2ko, ko2pdt, root, pathwayInfo)
+        writeNodes(sub2ko, ko2pdt, root, pathwayInfo)
+    }else{
+        warning("No reactions")
+    }
+}
 
-#' ###Compound
-                  sprintf("%s/cpd_nodedetails",args[2])                                 %>%
-                  read.table(,skip=1, sep="\t",h=F,quote="")                            %>%
-                  setNames(c("cpd","name"))                                             %>%
-                  filter(cpd %in% unique(c(sub2ko$cpd,ko2pdt$cpd)))                     %>%
-                  mutate(label='cpd')                                                   %>%
-                  setNames(c("cpd:ID","name","l:label"))                      %>%
-                  write.table(file=sprintf("%s/%s_cpdnodes",args[2],pathway.info$name),
-                              sep="\t",
-                              quote=F,
-                              row.names=F
-                              )
-#   cpd:string:cpdid                 name l:label
-#   22       cpd:C00022            Pyruvate;     cpd
-#   24       cpd:C00024          Acetyl-CoA;     cpd
-#   31       cpd:C00031           D-Glucose;     cpd
-#   33       cpd:C00033             Acetate;     cpd
-#   36       cpd:C00036        Oxaloacetate;     cpd
-#   66       cpd:C00068 Thiamin diphosphate;     cpd
-            }else{warning("No reactions")}
-}else{
-sprintf("%s does not contain reactions", listing) %>% warning()
-        }
-}, mc.cores=args[3]) %>% invisible
+pathwayListing %>% mclapply(function(listing){
+    message(sprintf("INFO: Processing pathway XML: %s", listing))
+    xml_data = xmlParse(listing) %>% xmlToList 
+    pathway.info =  data.frame(t(xml_data$.attrs)) %>% setNames(names(xml_data$.attrs))
+    numReactions = xml_data %>% names %>% sapply(function(name) name == 'reaction') %>% sum
+    hasRxn = numReactions > 0
+    if(hasRxn){
+        xml_data     = xml_data[-length(xml_data)] #Removes the last row (w/c is the pathway information)
+        ko2rxn = sapply(xml_data, linker_ko2rxn) %>% do.call(rbind,.) %>% .[complete.cases(.),]
+
+        rxns =  xml_data[which(names(xml_data) %in% "reaction")]
+        edges = rxns %>% lapply(makeEdges, ko2rxn = ko2rxn, listing = pathway.info$name)
+        sub2ko = edges %>% lapply(function(reaction) reaction$substrates) %>% do.call(rbind,.)
+        ko2pdt = edges %>% lapply(function(reaction) reaction$products) %>% do.call(rbind,.)
+        writeOutput(sub2ko, ko2pdt, root, pathway.info)
+    }else{
+        warning(sprintf("%s does not contain reactions", pathway.info$name))
+    }
+}, mc.cores = mccores) 
