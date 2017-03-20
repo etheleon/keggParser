@@ -16,14 +16,14 @@ while(<COMPOUND>) {
 }
 close COMPOUND;
 
-#open GLYCAN, $ARGV[1] || die $!;
-#while(<GLYCAN>) {
-    #my ($cpd) = $_ =~ /ENTRY\s+(G\d{5})/xsm;
-    #/NAME\s+(?<NAME> .*?)\n		#I'm just taking the first symbol name associated with this
-    #/xsm;
-    #print "gl:$cpd\t$+{NAME}\n" unless (length($cpd) == 0)
-#}
-#close GLYCAN;
+open GLYCAN, $ARGV[1] || die $!;
+while(<GLYCAN>) {
+    my ($cpd) = $_ =~ /ENTRY\s+(G\d{5})/xsm;
+    /NAME\s+(?<NAME> .*?)\n		#I'm just taking the first symbol name associated with this
+    /xsm;
+    print "gl:$cpd\t$+{NAME}\n" unless (length($cpd) == 0)
+}
+close GLYCAN;
 
 
 __DATA__
