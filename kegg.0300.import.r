@@ -93,7 +93,7 @@ writeEdges <- function(sub2ko, ko2pdt, root, pathway.info){
 #' output
 writeNodes <- function(sub2ko, ko2pdt, root, pathway.info){
     nodesdf = sprintf("%s/ko_nodedetails",root)        %>%
-        read.table(sep="\t",h=F,quote="")              %>%
+        read.csv(sep="\t",h=F,quote="")              %>%
         setNames(c("ko","name","definition"))          %>%
         filter(ko %in% unique(c(sub2ko$ko,ko2pdt$ko))) %>%
         mutate(label='ko')                             %>%
@@ -104,7 +104,7 @@ writeNodes <- function(sub2ko, ko2pdt, root, pathway.info){
     )
 
     sprintf("%s/cpd_nodedetails",root)                                %>%
-    read.table(skip=1, sep="\t",h=F,quote="")                         %>%
+    read.csv(skip=1, sep="\t",h=F,quote="")                         %>%
     filter(V1 %in% unique(c(sub2ko$cpd,ko2pdt$cpd)))                 %>%
     mutate(label='cpd')                                               %>%
     setNames(c("cpd:ID","name", "exactMass", "molWeight", "l:label")) %>%
@@ -118,11 +118,11 @@ writeNodes <- function(sub2ko, ko2pdt, root, pathway.info){
 #' @param root the root directory
 #' @param pathway.info dataframe containing the neccessary information
 #' output
-writeOutput = function(sub2ko, ko2pdt, root, pathwayInfo){
+writeOutput = function(sub2ko, ko2pdt, root, pathway.info){
     rxnsExist = length(sub2ko)+length(ko2pdt) > 0
     if(rxnsExist){  #some rxns do not have substrates and pdts eg. ko00270 (depreciated)
-        writeEdges(sub2ko, ko2pdt, root, pathwayInfo)
-        writeNodes(sub2ko, ko2pdt, root, pathwayInfo)
+        writeEdges(sub2ko, ko2pdt, root, pathway.info)
+        writeNodes(sub2ko, ko2pdt, root, pathway.info)
     }else{
         warning("No reactions")
     }
@@ -146,4 +146,4 @@ pathwayListing %>% mclapply(function(listing){
     }else{
         warning(sprintf("%s does not contain reactions", pathway.info$name))
     }
-}, mc.cores = mccores) 
+}, mc.cores = mccores)
