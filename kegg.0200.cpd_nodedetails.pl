@@ -9,10 +9,20 @@ open COMPOUND, $ARGV[0] || die $!;
 while(<COMPOUND>) {
     /^ENTRY\s+      (?<CPD>C\d{5}).*
     ^NAME\s+        (?<NAME> .*?)\n.*
-    ^EXACT_MASS\s+  (?<EXACT>\S+).*
-    ^MOL_WEIGHT\s+  (?<MOL>\S+)\n
     /xsm;
-    print join("\t", "cpd:$+{CPD}", $+{NAME}, $+{EXACT}, $+{MOL}),"\n" unless (length($+{CPD}) == 0);
+    my $cpd = $+{CPD};
+    my $name = $+{NAME};
+    my $exact = 0;
+    my $mol = 0;
+if(m/^EXACT_MASS\s+  \S+.*
+    ^MOL_WEIGHT\s+  \S+\n/xsm){
+    m/^EXACT_MASS\s+  (?<EXACT>\S+).*
+    ^MOL_WEIGHT\s+  (?<MOL>\S+)\n/xsm;
+$exact = $+{EXACT};
+$mol = $+{MOL};
+}
+
+    print join("\t", "cpd:$cpd", $name, $exact, $mol),"\n" unless (length($cpd) == 0);
 }
 close COMPOUND;
 
