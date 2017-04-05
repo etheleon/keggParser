@@ -104,7 +104,7 @@ writeNodes <- function(sub2ko, ko2pdt, root, pathway.info){
     )
 
     sprintf("%s/cpd_nodedetails",root)                                %>%
-    read.csv(skip=1, sep="\t",h=F,quote="")                         %>%
+    read.csv(sep="\t",h=F,quote="")                         %>%
     filter(V1 %in% unique(c(sub2ko$cpd,ko2pdt$cpd)))                 %>%
     mutate(label='cpd')                                               %>%
     setNames(c("cpd:ID","name", "exactMass", "molWeight", "l:label")) %>%
