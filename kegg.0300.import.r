@@ -95,7 +95,7 @@ writeNodes <- function(sub2ko, ko2pdt, root, pathway.info){
     nodesdf = sprintf("%s/ko_nodedetails",root)        %>%
         read.csv(sep="\t",h=F,quote="")              %>%
         setNames(c("ko","name","definition"))          %>%
-        filter(ko %in% unique(c(sub2ko$ko,ko2pdt$ko))) %>%
+        #filter(ko %in% unique(c(sub2ko$ko,ko2pdt$ko))) %>%
         mutate(label='ko')                             %>%
         cbind(select(pathway.info, name,title))
     sprintf("%s/%s_konodes",root,pathway.info$name) %>%
@@ -105,7 +105,7 @@ writeNodes <- function(sub2ko, ko2pdt, root, pathway.info){
 
     sprintf("%s/cpd_nodedetails",root)                                %>%
     read.csv(skip=1, sep="\t",h=F,quote="")                         %>%
-    filter(V1 %in% unique(c(sub2ko$cpd,ko2pdt$cpd)))                 %>%
+    #filter(V1 %in% unique(c(sub2ko$cpd,ko2pdt$cpd)))                 %>%
     mutate(label='cpd')                                               %>%
     setNames(c("cpd:ID","name", "exactMass", "molWeight", "l:label")) %>%
     write.table(file=sprintf("%s/%s_cpdnodes",root,pathway.info$name), sep="\t", quote=F, row.names=F)
