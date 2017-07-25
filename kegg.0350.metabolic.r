@@ -1,8 +1,9 @@
+#!/usr/bin/env Rscript
 library(tidyverse)
 
 args=commandArgs(T)
 
-root           = args[1]
+root = args[1]
 
 K00000 = data.frame('ko:K00000', "Unassigned", "Unassigned", "ko", NA) %>% 
     setNames(c("ko:ID", "name", "definition", "l:label", "pathway"))
