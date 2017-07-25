@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(magrittr))
 suppressPackageStartupMessages(library(XML))
 suppressPackageStartupMessages(library(parallel))
@@ -147,3 +147,5 @@ pathwayListing %>% mclapply(function(listing){
         warning(sprintf("%s does not contain reactions", pathway.info$name))
     }
 }, mc.cores = mccores)
+
+
