@@ -8,9 +8,10 @@ root = args[1]
 K00000 = data.frame('ko:K00000', "Unassigned", "Unassigned", "ko", NA) %>% 
     setNames(c("ko:ID", "name", "definition", "l:label", "pathway"))
 
-redun =  Sys.glob(sprintf("%s/misc/*_konodes", root)) %>% 
-    map(read_tsv) %>% bind_rows
-
+suppressMessages({
+    redun =  Sys.glob(sprintf("%s/misc/*_konodes", root)) %>% 
+        map(read_tsv) %>% bind_rows
+})
 merged = redun %>% group_by(`ko:ID`) %>% 
     summarise(pathway=paste(pathway, collapse="|"))
 
