@@ -1,27 +1,24 @@
 #!/usr/bin/env Rscript
-library(dplyr, warn.conflicts=FALSE)
-library(magrittr)
-library(igraph)
+suppressPackageStartupMessages({
+    library(tidyverse)
+    library(igraph)
+})
+
+message("Building igraph obj of metabolism")
 
 args = commandArgs(T)
 #args = "~/newMeta4j2/misc/"
 
-relationships <- list.files(args[1])                                  %>%
-    grep("rels$", ., value=T)                            %>%
-    paste(args[1], ., sep="/")                           %>%
-    lapply(function(fileName) read.table(fileName, h=T)) %>%
-    do.call(rbind,.)                                     %>%
-    unique
+message("## Generating edgelist")
+suppressMessages({
+    relationships =  Sys.glob(sprintf("%s/*rels", args[1])) %>%
+        map(read_tsv) %>% bind_rows %>%
+        rowwise %>% transmute( start = ifelse(relationship == 'produces', `ko:ID`, `cpd:ID`), end = ifelse(relationship == 'produces', `cpd:ID`, `ko:ID`))
+})
 
-relationships = lapply(1:nrow(relationships), function(x, df){
-       if(df[x,"relationship"] == "produces") {
-           df[x,]  %>% select(ko.string.koid, cpd.string.cpdid) %>% setNames(c("start", "end"))
-       }else{
-           df[x,]  %>% select(cpd.string.cpdid, ko.string.koid) %>% setNames(c("start", "end"))
-       }
-}, df = relationships) %>% do.call(rbind,.)
 
-## Creates IGRAPH OBJ
-wholeMetabolism = graph.data.frame(relationships, directed=T)
+message("## Converting edgelist to igraph obj")
+wholeMetabolism = graph.data.frame(relationships, directed=TRUE)
+
+message(sprintf("## Saving igraph object to %s/wholeMetabolism.rda", args[1]))
 save(wholeMetabolism, file=sprintf("%s/wholeMetabolism.rda", args[1]))
-
